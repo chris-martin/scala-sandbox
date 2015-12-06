@@ -1,0 +1,3 @@
+rootProject.name = 'scala-sandbox'
+
+include 'lib', 'repl'

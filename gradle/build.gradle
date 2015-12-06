@@ -1,0 +1,81 @@
+buildscript {
+    repositories { jcenter() }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
+    }
+}
+
+subprojects {
+
+    apply plugin: 'java'
+
+    // https://docs.gradle.org/current/userguide/scala_plugin.html
+    apply plugin: 'scala'
+
+    // https://github.com/johnrengelman/shadow
+    apply plugin: 'com.github.johnrengelman.shadow'
+
+    compileJava {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.7
+    }
+
+    compileScala {
+        scalaCompileOptions.additionalParameters = ['-deprecation', '-feature']
+    }
+
+    repositories {
+        mavenCentral()
+        maven {
+            url 'http://repo.spray.io/'
+        }
+        maven {
+            url 'http://dl.bintray.com/scalaz/releases'
+        }
+    }
+
+    dependencies {
+        compile 'org.scala-lang:scala-library:2.11.7'
+    }
+}
+
+project(':lib') {
+    dependencies {
+        compile 'com.github.nscala-time:nscala-time_2.11:1.4.0'
+        compile 'org.scalaz:scalaz-core_2.11:7.1.1'
+        compile 'org.scalaz:scalaz-concurrent_2.11:7.1.1'
+        compile 'org.http4s:http4s-blazeclient_2.11:0.8.4'
+        compile 'org.http4s:http4s-argonaut_2.11:0.8.4'
+        compile 'io.argonaut:argonaut_2.11:6.0.4'
+        compile 'net.iharder:base64:2.3.8'
+        testCompile 'org.scalatest:scalatest_2.11:2.2.1'
+    }
+}
+
+project(':repl') {
+
+    def scalaVersion = '2.11.7'
+
+    dependencies {
+        compile project(':lib')
+    }
+
+    buildscript {
+        dependencies {
+            classpath "org.scala-lang:scala-compiler:${scalaVersion}"
+        }
+        repositories {
+            mavenCentral()
+        }
+    }
+
+    def scalaPath = buildscript.configurations.classpath.find {
+        it.name == "scala-compiler-${scalaVersion}.jar"
+    }
+
+    def classpath = sourceSets.main.runtimeClasspath.asPath
+
+    task printClasspath << {
+        println "${scalaPath}:${classpath}"
+    }
+}
