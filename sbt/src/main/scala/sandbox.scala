@@ -1,32 +1,27 @@
 
 package object sandbox {
 
-  sealed trait Number {
-    type A
-    def underlying: A
-    def + (num : Number) : Number = ???
-    def - (num : Number) : Number = ???
-    def * (num : Number) : Number = ???
-  }
+    sealed trait Number {
+      type A
+      type B
+      def underlying: A
+      def +(that: B): B
+    }
 
-  sealed trait SignedNumber extends Number
+    sealed trait UInt32 extends Number { x =>
+      override type A = Long
+      override type B = UInt32
+      override def +(y: B): B = new UInt32 {
+        // todo - naive implementation, doesn't check overflow
+        override val underlying = x.underlying + y.underlying
+      }
+    }
 
-  sealed trait UnsignedNumber extends Number
-
-  sealed trait UInt32 extends UnsignedNumber {
-    override type A = Long
-  }
-
-  sealed trait UInt64 extends UnsignedNumber {
-    override type A = BigInt
-  }
-
-  sealed trait Int32 extends SignedNumber {
-    override type A = Int
-  }
-
-  sealed trait Int64 extends SignedNumber {
-    override type A = Long
-  }
+    def main(args: Array[String]) {
+      print((
+        new UInt32 { def underlying = 3 } +
+        new UInt32 { def underlying = 4 }
+      ).underlying)
+    }
 
 }
