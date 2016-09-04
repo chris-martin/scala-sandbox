@@ -1,27 +1,37 @@
+import akka.actor._
+import akka.pattern.{ask, pipe}
+import akka.util.Timeout
+
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
+import scala.util.Try
 
 package object sandbox {
 
-    sealed trait Number {
-      type A
-      type B
-      def underlying: A
-      def +(that: B): B
+  class Foo extends Actor {
+
+    import context.dispatcher
+
+    override def preStart(): Unit = println("actor start")
+
+    override def receive: Receive = {
+      case x =>
+        pipe(Future(throw new RuntimeException("hi"))).to(sender)
     }
 
-    sealed trait UInt32 extends Number { x =>
-      override type A = Long
-      override type B = UInt32
-      override def +(y: B): B = new UInt32 {
-        // todo - naive implementation, doesn't check overflow
-        override val underlying = x.underlying + y.underlying
-      }
-    }
+    override def postStop(): Unit = println("actor stop")
+  }
 
-    def main(args: Array[String]) {
-      print((
-        new UInt32 { def underlying = 3 } +
-        new UInt32 { def underlying = 4 }
-      ).underlying)
-    }
+  def main(args: Array[String]): Unit = {
+    println("system start")
+    val system = ActorSystem()
+    val foo = system.actorOf(Props[Foo])
+    implicit val timeout: Timeout = 1.second
+    println(Try(Await.result(foo.ask('hi), 1.second)))
+    io.StdIn.readLine()
+    Thread.sleep(2.seconds.toMillis)
+    println("terminating")
+    Await.result(system.terminate(), 1.second)
+  }
 
 }
