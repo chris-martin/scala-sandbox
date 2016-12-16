@@ -1,37 +1,11 @@
-import akka.actor._
-import akka.pattern.{ask, pipe}
-import akka.util.Timeout
-
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
-import scala.util.Try
+import scalaz._, Scalaz._
 
 package object sandbox {
 
-  class Foo extends Actor {
+  def f[A, B](xs: List[Either[List[A], B]]): List[Either[A, B]] =
+    xs.flatMap(_.fold(_.map(Left(_)), b => List(Right(b))))
 
-    import context.dispatcher
-
-    override def preStart(): Unit = println("actor start")
-
-    override def receive: Receive = {
-      case x =>
-        pipe(Future(throw new RuntimeException("hi"))).to(sender)
-    }
-
-    override def postStop(): Unit = println("actor stop")
-  }
-
-  def main(args: Array[String]): Unit = {
-    println("system start")
-    val system = ActorSystem()
-    val foo = system.actorOf(Props[Foo])
-    implicit val timeout: Timeout = 1.second
-    println(Try(Await.result(foo.ask('hi), 1.second)))
-    io.StdIn.readLine()
-    Thread.sleep(2.seconds.toMillis)
-    println("terminating")
-    Await.result(system.terminate(), 1.second)
-  }
+  def g[A, B](xs: IList[IList[A] \/ B]): IList[A \/ B] =
+    xs.flatMap(_.bitraverse(identity, IList(_)))
 
 }
